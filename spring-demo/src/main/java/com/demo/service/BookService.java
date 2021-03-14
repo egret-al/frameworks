@@ -5,10 +5,10 @@ import com.spring.annotation.Component;
 
 /**
  * @author rkc
- * @date 2021/3/12 13:40
+ * @date 2021/3/14 12:51
  */
-@Component("indexService")
-public class IndexService {
+@Component("bookService")
+public class BookService {
 
     @Autowired
     private UserService userService;

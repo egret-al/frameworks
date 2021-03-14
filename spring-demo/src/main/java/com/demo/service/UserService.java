@@ -16,7 +16,14 @@ public class UserService implements BeanNameAware, InitializingBean {
     @Autowired
     private IndexService indexService;
 
+    @Autowired
+    private BookService bookService;
+
     private String beanName;
+
+    public BookService getBookService() {
+        return bookService;
+    }
 
     public IndexService getIndexService() {
         return indexService;
@@ -33,6 +40,6 @@ public class UserService implements BeanNameAware, InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        System.out.println("afterPropertiesSet");
+
     }
 }
