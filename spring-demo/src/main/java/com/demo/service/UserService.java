@@ -1,8 +1,7 @@
 package com.demo.service;
 
-import com.spring.annotation.Autowired;
-import com.spring.annotation.Component;
-import com.spring.annotation.Scope;
+import com.demo.test.Test;
+import com.spring.annotation.*;
 import com.spring.factory.BeanNameAware;
 import com.spring.factory.InitializingBean;
 
@@ -10,7 +9,7 @@ import com.spring.factory.InitializingBean;
  * @author rkc
  * @date 2021/3/12 13:40
  */
-@Component("userService")
+@Repository
 public class UserService implements BeanNameAware, InitializingBean {
 
     @Autowired

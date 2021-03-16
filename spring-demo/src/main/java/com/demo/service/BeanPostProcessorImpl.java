@@ -7,7 +7,7 @@ import com.spring.factory.BeanPostProcessor;
  * @author rkc
  * @date 2021/3/12 21:40
  */
-@Component("beanPostProcessorImpl")
+@Component
 public class BeanPostProcessorImpl implements BeanPostProcessor {
 
     @Override

@@ -4,11 +4,13 @@ import java.lang.annotation.*;
 
 /**
  * @author rkc
- * @date 2021/3/12 13:41
+ * @date 2021/3/15 12:43
  */
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
-public @interface Component {
+public @interface Bean {
 
     String value() default "";
+
+    String name() default "";
 }

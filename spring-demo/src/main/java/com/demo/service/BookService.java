@@ -2,12 +2,13 @@ package com.demo.service;
 
 import com.spring.annotation.Autowired;
 import com.spring.annotation.Component;
+import com.spring.annotation.Service;
 
 /**
  * @author rkc
  * @date 2021/3/14 12:51
  */
-@Component("bookService")
+@Service
 public class BookService {
 
     @Autowired

@@ -6,9 +6,14 @@ import com.spring.factory.BeanNameAware;
 import com.spring.factory.BeanPostProcessor;
 import com.spring.factory.InitializingBean;
 import com.spring.factory.ObjectFactory;
+import com.spring.resolver.*;
+import com.spring.util.StringUtils;
 
+import java.io.Serializable;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -17,16 +22,36 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author rkc
  * @date 2021/3/12 19:25
  */
-public class DefaultListableBeanFactory extends DefaultSingletonBeanRegistry {
+public class DefaultListableBeanFactory implements Serializable {
 
+    /** 用于存放bean的定义信息 **/
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
+    /** 提前暴露的二级缓存 **/
     private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>(256);
-    protected final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
-//    private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
-
-//    private final Set<String> singletonsCurrentlyInCreation = Collections.newSetFromMap(new ConcurrentHashMap<>(16));
+    /** 存放走完整个spring bean生命周期的对象 **/
+    private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
+    /** 三级缓存 **/
+    private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
+    /** 如果对象正在创建中，则会加入到这个集合中 **/
+    private final Set<String> singletonsCurrentlyInCreation = Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
     private final List<BeanPostProcessor> beanPostProcessors = new CopyOnWriteArrayList<>();
+
+    private static final Map<String, AnnotationParser> annotationPostProcessors = new ConcurrentHashMap<>(256);
+
+    static {
+        annotationPostProcessors.put("Component", new ComponentAnnotationParser());
+        annotationPostProcessors.put("Service", new ServiceAnnotationParser());
+        annotationPostProcessors.put("Repository", new RepositoryAnnotationParser());
+        annotationPostProcessors.put("Controller", new ControllerAnnotationParser());
+    }
+
+    public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) {
+        if (beanDefinition.getBeanClass() == null) throw new RuntimeException("非法的BeanDefinition");
+        synchronized (this.beanDefinitionMap) {
+            this.beanDefinitionMap.put(beanName, beanDefinition);
+        }
+    }
 
     /**
      * 将字节码描述成一个BeanDefinition
@@ -34,7 +59,10 @@ public class DefaultListableBeanFactory extends DefaultSingletonBeanRegistry {
      */
     public void registerBeanDefinition(Set<Class<?>> classSet) {
         for (Class<?> clazz : classSet) {
-            if (clazz.isAnnotationPresent(Component.class)) {
+            if (clazz.isAnnotationPresent(Component.class) || clazz.isAnnotationPresent(Service.class)
+                    || clazz.isAnnotationPresent(Repository.class) || clazz.isAnnotationPresent(Controller.class)) {
+
+                //如果实现了BeanPostProcessor接口，就添加到beanPostProcessors中
                 if (BeanPostProcessor.class.isAssignableFrom(clazz)) {
                     //类实现了BeanPostProcessor接口
                     try {
@@ -44,10 +72,17 @@ public class DefaultListableBeanFactory extends DefaultSingletonBeanRegistry {
                         e.printStackTrace();
                     }
                 }
-                Component component = clazz.getAnnotation(Component.class);
-                BeanDefinition beanDefinition = new BeanDefinition();
+                BeanDefinition beanDefinition = new RootBeanDefinition();
                 beanDefinition.setBeanClass(clazz);
-                String beanName = component.value();
+
+                Annotation annotation = clazz.getAnnotation(Component.class) == null ? clazz.getAnnotation(Service.class) : clazz.getAnnotation(Component.class);
+                if (annotation == null) annotation = clazz.getAnnotation(Repository.class) == null ? clazz.getAnnotation(Controller.class) : clazz.getAnnotation(Repository.class);
+                if (annotation == null) throw new RuntimeException("注册beanDefinition期间发生异常");
+
+                //根据字节码取出对应的解析器
+                AnnotationParser annotationParser = annotationPostProcessors.get(annotation.getClass().getInterfaces()[0].getSimpleName());
+                String beanName = annotationParser.getBeanName(annotation);
+
                 if (clazz.isAnnotationPresent(Scope.class)) {
                     Scope scope = clazz.getAnnotation(Scope.class);
                     beanDefinition.setScope(scope.value());
@@ -56,22 +91,26 @@ public class DefaultListableBeanFactory extends DefaultSingletonBeanRegistry {
                     beanDefinition.setScope(beanDefinition.SCOPE_SINGLETON);
                 }
                 if (beanName.isEmpty()) {
-                    beanName = clazz.getSimpleName();
+                    beanName = StringUtils.toLowerCaseFirstOne(clazz.getSimpleName());
                 }
                 beanDefinitionMap.put(beanName, beanDefinition);
             }
         }
     }
 
-    private void doCreateBean() {
+    public void doCreateBean() {
+        earlySingletonObjects.clear();
+        singletonObjects.clear();
+        singletonsCurrentlyInCreation.clear();
+        singletonFactories.clear();
+
         for (String beanName : beanDefinitionMap.keySet()) {
             BeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
-            if (beanDefinition.getScope().equals(beanDefinition.SCOPE_SINGLETON)) {
+            if (beanDefinition.isSingleton()) {
                 if (!singletonObjects.containsKey(beanName)) {
                     Object bean = getSingleton(beanName);
                     //1、创建bean（调用构造方法），放入二级缓存中
                     if (bean == null) bean = createBeanInstance(beanName, beanDefinition);
-
                     //2、属性注入
                     populateBean(beanName, beanDefinition);
                     //3、接口回调BeanPostProcessor和InitializingBean
@@ -79,12 +118,17 @@ public class DefaultListableBeanFactory extends DefaultSingletonBeanRegistry {
                 }
             }
             //一个java对象走完整个spring生命周期后，移出二级缓存到一级缓存
-            Object bean = this.earlySingletonObjects.remove(beanName);
-            this.singletonObjects.put(beanName, bean);
+            Object bean = earlySingletonObjects.remove(beanName);
+            singletonObjects.put(beanName, bean);
+            singletonsCurrentlyInCreation.remove(beanName);
         }
     }
 
     public void finishBeanFactoryInitialization() {
+        this.earlySingletonObjects.clear();
+        this.singletonObjects.clear();
+        this.singletonsCurrentlyInCreation.clear();
+        this.singletonFactories.clear();
         doCreateBean();
     }
 
@@ -94,12 +138,11 @@ public class DefaultListableBeanFactory extends DefaultSingletonBeanRegistry {
      * @param beanDefinition beanDefinition
      */
     public void populateBean(String beanName, BeanDefinition beanDefinition) {
-
         Object bean = singletonObjects.get(beanName);
         if (bean == null) bean = earlySingletonObjects.get(beanName);
         Field[] fields = beanDefinition.getBeanClass().getDeclaredFields();
         for (Field field : fields) {
-            if (field.isAnnotationPresent(Autowired.class)) {
+            if (field.isAnnotationPresent(Autowired.class) && field.getAnnotation(Autowired.class).required()) {
                 //尝试从获取属性bean
                 Object o = getSingleton(field.getName());
                 if (o != null) {
@@ -122,29 +165,17 @@ public class DefaultListableBeanFactory extends DefaultSingletonBeanRegistry {
      */
     public Object getSingleton(String beanName) {
         Object singletonObject = this.singletonObjects.get(beanName);
-        //能够直接获取到singleton（存在singletonObjects中的spring bean）
-        if (singletonObject != null) return singletonObject;
-        //不存在，尝试从earlySingletonObjects中获取bean
-        singletonObject = this.earlySingletonObjects.get(beanName);
-        if (singletonObject != null) return singletonObject;
+        BeanDefinition beanDefinition = this.beanDefinitionMap.get(beanName);
 
-        Object instance = createBeanInstance(beanName, this.beanDefinitionMap.get(beanName));
-        earlySingletonObjects.put(beanName, instance);
-//        synchronized (this.singletonObjects) {
-//            singletonObject = this.singletonObjects.get(beanName);
-//            if (singletonObject == null) {
-//                singletonObject = this.earlySingletonObjects.get(beanName);
-//                if (singletonObject == null) {
-//                    ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
-//                    if (singletonFactory != null) {
-//                        singletonObject = singletonFactory.getObject();
-//                        this.earlySingletonObjects.put(beanName, singletonObject);
-//                        this.singletonFactories.remove(beanName);
-//                    }
-//                }
-//            }
-//        }
-        return instance;
+        if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+            synchronized (this.singletonObjects) {
+                singletonObject = this.earlySingletonObjects.get(beanName);
+                if (singletonObject == null) singletonObject = createBeanInstance(beanName, beanDefinition);
+                return singletonObject;
+            }
+        }
+        if (singletonObject == null && beanDefinition.isSingleton()) singletonObject = createBeanInstance(beanName, beanDefinition);
+        return singletonObject;
     }
 
     /**
@@ -176,15 +207,18 @@ public class DefaultListableBeanFactory extends DefaultSingletonBeanRegistry {
      * 本质上就是利用反射调用构造方法
      * @param beanName beanName
      * @param beanDefinition beanDefinition
-     * @return
+     * @return 普通Java对象，没有任何属性
      */
     public Object createBeanInstance(String beanName, BeanDefinition beanDefinition) {
         Class<?> beanClass = beanDefinition.getBeanClass();
         Object bean = null;
         try {
-            //1、实例化完成后，放入二级缓存
             bean = beanClass.getDeclaredConstructor().newInstance();
-            this.earlySingletonObjects.put(beanName, bean);
+            if (beanDefinition.isSingleton()) {
+                //标注该对象正在创建中
+                singletonsCurrentlyInCreation.add(beanName);
+                this.earlySingletonObjects.put(beanName, bean);
+            }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             e.printStackTrace();
         }
@@ -193,10 +227,10 @@ public class DefaultListableBeanFactory extends DefaultSingletonBeanRegistry {
 
     public Object getBean(String name) {
         BeanDefinition beanDefinition = beanDefinitionMap.get(name);
-        if (beanDefinition.getScope().equals(beanDefinition.SCOPE_SINGLETON)) {
+        if (beanDefinition.isSingleton()) {
             //单例池获取
             return getSingleton(name);
-        } else if (beanDefinition.getScope().equals(beanDefinition.SCOPE_PROTOTYPE)) {
+        } else if (beanDefinition.isPrototype()) {
             //原型
             return createBeanInstance(name, beanDefinition);
         }
@@ -206,10 +240,10 @@ public class DefaultListableBeanFactory extends DefaultSingletonBeanRegistry {
     @SuppressWarnings("all")
     public <T> T getBean(String name, Class<T> requiredType) {
         BeanDefinition beanDefinition = beanDefinitionMap.get(name);
-        if (beanDefinition.getScope().equals(beanDefinition.SCOPE_SINGLETON)) {
+        if (beanDefinition.isSingleton()) {
             //单例池获取
             return (T) getSingleton(name);
-        } else if (beanDefinition.getScope().equals(beanDefinition.SCOPE_PROTOTYPE)) {
+        } else if (beanDefinition.isPrototype()) {
             //原型
             return (T) createBeanInstance(name, beanDefinition);
         }
@@ -218,5 +252,9 @@ public class DefaultListableBeanFactory extends DefaultSingletonBeanRegistry {
 
     public List<BeanPostProcessor> getBeanPostProcessors() {
         return this.beanPostProcessors;
+    }
+
+    public boolean isSingletonCurrentlyInCreation(String beanName) {
+        return this.singletonsCurrentlyInCreation.contains(beanName);
     }
 }

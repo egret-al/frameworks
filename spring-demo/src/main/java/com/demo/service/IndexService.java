@@ -1,13 +1,12 @@
 package com.demo.service;
 
-import com.spring.annotation.Autowired;
-import com.spring.annotation.Component;
+import com.spring.annotation.*;
 
 /**
  * @author rkc
  * @date 2021/3/12 13:40
  */
-@Component("indexService")
+@Controller
 public class IndexService {
 
     @Autowired

@@ -1,11 +1,20 @@
 package com.demo;
 
-import com.demo.config.ApplicationConfig;
 import com.demo.service.BookService;
 import com.demo.service.IndexService;
 import com.demo.service.UserService;
-import com.spring.annotation.ComponentScan;
+import com.spring.annotation.*;
+import com.spring.config.BeanDefinition;
 import com.spring.context.AnnotationConfigApplicationContext;
+import com.spring.resolver.AnnotationParser;
+import com.spring.resolver.ComponentAnnotationParser;
+import com.spring.resolver.RepositoryAnnotationParser;
+import com.spring.resolver.ServiceAnnotationParser;
+import com.spring.support.RootBeanDefinition;
+
+import java.lang.annotation.Annotation;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author rkc
@@ -16,12 +25,6 @@ public class Test {
 
     public static void main(String[] args) {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(Test.class);
-        UserService userService = context.getBean("userService", UserService.class);
-        IndexService indexService = context.getBean("indexService", IndexService.class);
-        BookService bookService = context.getBean("bookService", BookService.class);
-        System.out.println("userService: " + userService + "   userService.indexService: " + userService.getIndexService());
-        System.out.println("userService: " + userService + "   userService.bookService: " + userService.getBookService());
-        System.out.println("bookService: " + bookService + "   bookService.userService: " + bookService.getUserService());
-        System.out.println("indexService: " + indexService + "   indexService.UserService: " + indexService.getUserService());
+        System.out.println(context.getBean("userService", UserService.class));
     }
 }

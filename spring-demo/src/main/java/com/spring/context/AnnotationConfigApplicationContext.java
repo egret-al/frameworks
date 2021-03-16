@@ -1,17 +1,10 @@
 package com.spring.context;
 
-import com.spring.annotation.*;
+import com.spring.annotation.ClassPathBeanDefinitionScanner;
 import com.spring.config.BeanDefinition;
 import com.spring.support.DefaultListableBeanFactory;
 
-import java.io.File;
-import java.lang.annotation.Annotation;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author rkc
@@ -38,9 +31,15 @@ public class AnnotationConfigApplicationContext {
 
     public void refresh() {
         synchronized (this.startupShutdownMonitor) {
+            //TODO 环境准备、各种监听器的注册、工厂创建、国际化处理等操作
+
             //完成工厂的创建，开始准备处理需要Spring管理得bean
             getBeanFactory().finishBeanFactoryInitialization();
         }
+    }
+
+    public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) {
+        getBeanFactory().registerBeanDefinition(beanName, beanDefinition);
     }
 
     public <T> T getBean(String name, Class<T> requiredType) {

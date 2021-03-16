@@ -15,6 +15,11 @@ import java.util.Set;
  */
 public class ClassPathBeanDefinitionScanner {
 
+    /**
+     * 根据传入的配置类（被@ComponentScan标注的配置类）
+     * @param configClass 被@ComponentScan标注的类字节码
+     * @return 对应路径下所有的字节码
+     */
     public Set<Class<?>> scan(Class<?> configClass) {
         Set<Class<?>> classSet = new HashSet<>();
         //扫描，得到字节码
@@ -22,10 +27,11 @@ public class ClassPathBeanDefinitionScanner {
             throw new RuntimeException("没有配置指定扫描包路径");
         }
         ComponentScan componentScan = configClass.getAnnotation(ComponentScan.class);
+        if (componentScan.value().isEmpty()) throw new RuntimeException("没有指定包路径！");
         String path = componentScan.value().replace(".", "/");                //得到包路径
 
-        //通过类加载器得到Class
-        ClassLoader classLoader = AnnotationConfigApplicationContext.class.getClassLoader();
+        //通过类加载器得到需要给spring管理的Class
+        ClassLoader classLoader = ClassPathBeanDefinitionScanner.class.getClassLoader();
         URL url = classLoader.getResource(path);
         File directory = new File(url.getFile());
         if (directory.isDirectory()) {
@@ -35,7 +41,10 @@ public class ClassPathBeanDefinitionScanner {
                         .replace("\\", ".");
                 try {
                     Class<?> clazz = classLoader.loadClass(absolutePath);
-                    classSet.add(clazz);
+                    if (clazz.isAnnotationPresent(Component.class) || clazz.isAnnotationPresent(Service.class)
+                            || clazz.isAnnotationPresent(Repository.class) || clazz.isAnnotationPresent(Controller.class)) {
+                        classSet.add(clazz);
+                    }
                 } catch (ClassNotFoundException e) {
                     e.printStackTrace();
                 }

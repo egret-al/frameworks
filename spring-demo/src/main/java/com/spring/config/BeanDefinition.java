@@ -4,36 +4,24 @@ package com.spring.config;
  * @author rkc
  * @date 2021/3/12 14:14
  */
-public class BeanDefinition {
+public interface BeanDefinition {
 
-    private Class<?> beanClass;
-    private String scope;
-    private Boolean isLazy;
+    String SCOPE_SINGLETON = ConfigurableBeanFactory.SCOPE_SINGLETON;
+    String SCOPE_PROTOTYPE = ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
-    public String SCOPE_SINGLETON = ConfigurableBeanFactory.SCOPE_SINGLETON;
-    public String SCOPE_PROTOTYPE = ConfigurableBeanFactory.SCOPE_PROTOTYPE;
+    String getScope();
 
-    public Class<?> getBeanClass() {
-        return beanClass;
-    }
+    void setScope(String scope);
 
-    public void setBeanClass(Class<?> beanClass) {
-        this.beanClass = beanClass;
-    }
+    void setLazyInit(boolean lazyInit);
 
-    public String getScope() {
-        return scope;
-    }
+    boolean isLazyInit();
 
-    public void setScope(String scope) {
-        this.scope = scope;
-    }
+    boolean isSingleton();
 
-    public Boolean getLazy() {
-        return isLazy;
-    }
+    boolean isPrototype();
 
-    public void setLazy(Boolean lazy) {
-        isLazy = lazy;
-    }
+    Class<?> getBeanClass();
+
+    void setBeanClass(Class<?> beanClass);
 }
