@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
-//@WebServlet("/user")
+@WebServlet("/user")
 public class UserServlet extends HttpServlet {
 
     @Override

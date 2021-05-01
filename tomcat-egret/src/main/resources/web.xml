@@ -2,22 +2,22 @@
 <web-app xmlns="http://www.example.org/web-app_2_5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://www.example.org/web-app_2_5 web-app_2_5.xsd"
          version="2.5">
-    <servlet>
-        <servlet-name>userServlet</servlet-name>
-        <servlet-class>com.test.UserServlet</servlet-class>
-    </servlet>
+<!--    <servlet>-->
+<!--        <servlet-name>userServlet</servlet-name>-->
+<!--        <servlet-class>com.test.UserServlet</servlet-class>-->
+<!--    </servlet>-->
 
-    <servlet>
-        <servlet-name>indexServlet</servlet-name>
-        <servlet-class>com.test.IndexServlet</servlet-class>
-    </servlet>
+<!--    <servlet>-->
+<!--        <servlet-name>indexServlet</servlet-name>-->
+<!--        <servlet-class>com.test.IndexServlet</servlet-class>-->
+<!--    </servlet>-->
 
-    <servlet-mapping>
-        <servlet-name>userServlet</servlet-name>
-        <url-pattern>/user</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>indexServlet</servlet-name>
-        <url-pattern>/index</url-pattern>
-    </servlet-mapping>
+<!--    <servlet-mapping>-->
+<!--        <servlet-name>userServlet</servlet-name>-->
+<!--        <url-pattern>/user</url-pattern>-->
+<!--    </servlet-mapping>-->
+<!--    <servlet-mapping>-->
+<!--        <servlet-name>indexServlet</servlet-name>-->
+<!--        <url-pattern>/index</url-pattern>-->
+<!--    </servlet-mapping>-->
 </web-app>

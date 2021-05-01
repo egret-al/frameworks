@@ -6,17 +6,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @author：rkc
- * @date：Created in 2021/4/26 18:30
- * @description：
+ * 指定servlet所在的包，允许指定多个，会扫描所有标注有@WebServlet注解的类
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface WebServlet {
+public @interface ServletComponentScan {
 
-    String name() default "";
-
-    String value() default "";
-
-    String description() default "";
+    String[] value() default {};
 }

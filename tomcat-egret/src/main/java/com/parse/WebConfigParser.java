@@ -11,5 +11,5 @@ import java.util.Map;
  */
 public interface WebConfigParser {
 
-    void servletMapping(Map<String, HttpServlet> servletMap, Map<String, String> servletMapping);
+    void servletMapping(String path, Map<String, HttpServlet> servletMap, Map<String, String> servletMapping);
 }

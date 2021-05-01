@@ -19,47 +19,18 @@ import java.util.concurrent.*;
  * @description：
  */
 public class HttpServerHandler implements Runnable {
-    private static final ExecutorService EXECUTOR_SERVICE = new ThreadPoolExecutor(5, 10, 10,
-            TimeUnit.SECONDS, new ArrayBlockingQueue<>(10));
+
     private final Socket socket;
+    private final ServerContext serverContext;
 
-    /* <servlet></servlet>标签， <servlet-name>为key，<servlet-class>为value */
-    private static final Map<String, HttpServlet> servletMap = new ConcurrentHashMap<>(256);
-
-    /* <servlet-mapping></servlet-mapping>标签，<url-pattern>为key，<servlet-name>为value */
-    private static final Map<String, String> servletMapping = new ConcurrentHashMap<>(256);
-
-    private static ServerSocket serverSocket;
-
-    static {
-        WebConfigParser webConfigParser = new XmlWebConfigParser();
-        //xml的方式进行解析
-        webConfigParser.servletMapping(servletMap, servletMapping);
-    }
-
-    public HttpServerHandler(Socket socket) {
+    public HttpServerHandler(ServerContext serverContext, Socket socket) {
+        this.serverContext = serverContext;
         this.socket = socket;
-    }
-
-    public static void run(int port) {
-        try {
-            serverSocket = new ServerSocket(port);
-            System.out.printf("服务器在%d端口启动...\n", port);
-            while (true) {
-                //进行监听，一旦有请求，就交给线程池处理
-                Socket socket = serverSocket.accept();
-                HttpServerHandler httpServerHandler = new HttpServerHandler(socket);
-                EXECUTOR_SERVICE.execute(httpServerHandler);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
     public void run() {
         try {
-//            handle();
             //封装为HttpServletRequest
             HttpServletRequest request = new HttpServletRequestWrapper(socket.getInputStream());
             //封装HttpServletResponse
@@ -68,10 +39,10 @@ public class HttpServerHandler implements Runnable {
             //根据uri得到一个servletName
             String uri = request.getRequestURI();
             if (uri != null && !uri.isEmpty()) {
-                String servletName = servletMapping.get(uri);
+                String servletName = serverContext.getServletMapping().get(uri);
                 if (servletName != null && !servletName.isEmpty()) {
                     //根据servletName得到servlet
-                    HttpServlet httpServlet = servletMap.get(servletName);
+                    HttpServlet httpServlet = serverContext.getServletMap().get(servletName);
                     if (httpServlet != null) {
                         //写入成功的响应头
                         response.getWriter().write(HttpServletResponse.CODE_200);

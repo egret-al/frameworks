@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
  * @date：Created in 2021/4/26 19:53
  * @description：
  */
-//@WebServlet(value = "/index")
+@WebServlet(value = "/index")
 public class IndexServlet extends HttpServlet {
 
     @Override

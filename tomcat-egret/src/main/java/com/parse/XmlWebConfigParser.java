@@ -18,12 +18,16 @@ import java.util.Map;
 public class XmlWebConfigParser implements WebConfigParser {
 
     @Override
-    public void servletMapping(Map<String, HttpServlet> servletMap, Map<String, String> servletMapping) {
+    public void servletMapping(String path, Map<String, HttpServlet> servletMap, Map<String, String> servletMapping) {
         try {
-            String basePath = XmlWebConfigParser.class.getResource("/").getPath();
+            File webXmlFile = new File(path);
+            if (!webXmlFile.exists()) {
+                System.err.println(webXmlFile.getAbsolutePath() + "文件路径不存在！将跳过加载");
+                return;
+            }
             //获取解析器
             SAXReader reader = new SAXReader();
-            Document document = reader.read(new File(basePath + "web.xml"));
+            Document document = reader.read(webXmlFile);
             Element root = document.getRootElement();
             List<Element> childElements = root.elements();
             for (Element element : childElements) {
@@ -38,12 +42,20 @@ public class XmlWebConfigParser implements WebConfigParser {
                     if (!HttpServlet.class.isAssignableFrom(clazz)) {
                         throw new RuntimeException("类" + clazz.getSimpleName() + "没有继承HttpServlet");
                     }
+                    if (servletMap.containsKey(servletName.getText())) {
+                        System.err.println(clazz.getSimpleName() + "已经被加载过！");
+                        return;
+                    }
                     servletMap.put(servletName.getText(), (HttpServlet) clazz.newInstance());
                 } else if ("servlet-mapping".equals(element.getName())) {
                     //获得servletName元素
                     Element servletName = element.element("servlet-name");
                     //获得urlPattern元素
                     Element urlPattern = element.element("url-pattern");
+                    if (servletMap.containsKey(urlPattern.getText())) {
+                        System.err.println(urlPattern.getText() + "已经被加载过！");
+                        return;
+                    }
                     servletMapping.put(urlPattern.getText(), servletName.getText());
                 }
             }
