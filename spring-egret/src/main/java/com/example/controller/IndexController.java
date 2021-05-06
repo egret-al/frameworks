@@ -1,8 +1,9 @@
-package com.demo.controller;
+package com.example.controller;
 
-import com.demo.service.IndexService;
+import com.example.service.IndexService;
 import com.spring.annotation.Autowired;
 import com.spring.annotation.Controller;
+import com.spring.annotation.Qualifier;
 
 /**
  * @author：rkc
@@ -13,9 +14,10 @@ import com.spring.annotation.Controller;
 public class IndexController {
 
     @Autowired
-    private IndexService indexService;
+    @Qualifier("indexServiceImpl1")
+    private IndexService indexServiceImpl2;
 
     public IndexService getIndexService() {
-        return indexService;
+        return indexServiceImpl2;
     }
 }

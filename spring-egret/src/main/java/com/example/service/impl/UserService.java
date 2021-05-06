@@ -1,4 +1,4 @@
-package com.demo.service;
+package com.example.service.impl;
 
 import com.spring.annotation.*;
 import com.spring.factory.BeanNameAware;
@@ -12,7 +12,7 @@ import com.spring.factory.InitializingBean;
 public class UserService implements BeanNameAware, InitializingBean {
 
     @Autowired
-    private IndexService indexService;
+    private IndexServiceImpl1 indexServiceImpl1;
 
     @Autowired
     private BookService bookService;
@@ -23,8 +23,8 @@ public class UserService implements BeanNameAware, InitializingBean {
         return bookService;
     }
 
-    public IndexService getIndexService() {
-        return indexService;
+    public IndexServiceImpl1 getIndexService() {
+        return indexServiceImpl1;
     }
 
     @Override

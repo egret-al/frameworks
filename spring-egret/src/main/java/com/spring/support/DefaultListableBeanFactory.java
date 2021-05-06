@@ -153,8 +153,14 @@ public class DefaultListableBeanFactory implements Serializable {
         Field[] fields = beanDefinition.getBeanClass().getDeclaredFields();
         for (Field field : fields) {
             if (field.isAnnotationPresent(Autowired.class) && field.getAnnotation(Autowired.class).required()) {
+                String fieldName = field.getName();
+                //TODO 修改属性注入逻辑
+                if (field.isAnnotationPresent(Qualifier.class)) {
+                    Qualifier qualifier = field.getAnnotation(Qualifier.class);
+                    fieldName = qualifier.value();
+                }
                 //尝试从获取属性bean
-                Object o = getSingleton(field.getName());
+                Object o = getSingleton(fieldName);
                 if (o != null) {
                     //如果不为空，则直接填充
                     try {
@@ -176,6 +182,9 @@ public class DefaultListableBeanFactory implements Serializable {
     public Object getSingleton(String beanName) {
         Object singletonObject = this.singletonObjects.get(beanName);
         BeanDefinition beanDefinition = this.beanDefinitionMap.get(beanName);
+        if (beanDefinition == null) {
+            return null;
+        }
 
         if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
             synchronized (this.singletonObjects) {
@@ -241,6 +250,9 @@ public class DefaultListableBeanFactory implements Serializable {
 
     public Object getBean(String name) {
         BeanDefinition beanDefinition = beanDefinitionMap.get(name);
+        if (beanDefinition == null) {
+            return null;
+        }
         if (beanDefinition.isSingleton()) {
             //单例池获取
             return getSingleton(name);
@@ -254,6 +266,9 @@ public class DefaultListableBeanFactory implements Serializable {
     @SuppressWarnings("all")
     public <T> T getBean(String name, Class<T> requiredType) {
         BeanDefinition beanDefinition = beanDefinitionMap.get(name);
+        if (beanDefinition == null) {
+            return null;
+        }
         if (beanDefinition.isSingleton()) {
             //单例池获取
             return (T) getSingleton(name);

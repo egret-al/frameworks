@@ -1,7 +1,6 @@
-package com.demo.service;
+package com.example.service.impl;
 
 import com.spring.annotation.Autowired;
-import com.spring.annotation.Component;
 import com.spring.annotation.Service;
 
 /**

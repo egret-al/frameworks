@@ -1,4 +1,4 @@
-package com.demo.service;
+package com.example.service.impl;
 
 import com.spring.annotation.Component;
 import com.spring.factory.BeanPostProcessor;

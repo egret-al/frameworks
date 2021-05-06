@@ -31,7 +31,6 @@ public class ClassPathBeanDefinitionScanner {
         for (String packagePath : componentScan.value()) {
             doScan(classSet, packagePath.replace(".", "/"));
         }
-//        doScan(classSet, componentScan.value().replace(".", "/"));
         return classSet;
     }
 
