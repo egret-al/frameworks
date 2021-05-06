@@ -25,10 +25,13 @@ public class ClassPathBeanDefinitionScanner {
             throw new RuntimeException("没有配置指定扫描包路径");
         }
         ComponentScan componentScan = configClass.getAnnotation(ComponentScan.class);
-        if (componentScan.value().isEmpty()) {
+        if (componentScan.value().length == 0) {
             throw new RuntimeException("没有指定包路径！");
         }
-        doScan(classSet, componentScan.value().replace(".", "/"));
+        for (String packagePath : componentScan.value()) {
+            doScan(classSet, packagePath.replace(".", "/"));
+        }
+//        doScan(classSet, componentScan.value().replace(".", "/"));
         return classSet;
     }
 
