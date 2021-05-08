@@ -1,5 +1,6 @@
 package com.spring.support;
 
+import com.spring.annotation.ClassPathBeanDefinitionScanner;
 import com.spring.config.BeanDefinition;
 import com.spring.config.ConfigurableListableBeanFactory;
 import com.spring.context.ConfigurableApplicationContext;
@@ -8,10 +9,7 @@ import com.spring.factory.NoSuchBeanDefinitionException;
 import com.spring.factory.config.BeanFactoryPostProcessor;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -33,6 +31,8 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     /* 存放所有实现了BeanFactoryPostProcessor的bean */
     private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new ArrayList<>();
     private final Object startupShutdownMonitor = new Object();
+    /* 将bean转换为BeanDefinition */
+    protected final ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner();
 
     public AbstractApplicationContext() {
         beanFactory = new DefaultListableBeanFactory();
@@ -41,6 +41,28 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     public AbstractApplicationContext(DefaultListableBeanFactory beanFactory) {
         Objects.requireNonNull(beanFactory);
         this.beanFactory = beanFactory;
+    }
+
+    /**
+     * 传入包名扫描路径将其注册为BeanDefinition
+     * @param packagePath 包名
+     */
+    public void register(String packagePath) {
+        Set<Class<?>> classSet = new HashSet<>();
+        scanner.doScan(classSet, packagePath.replace(".", "/"));
+        beanFactory.registerBeanDefinition(classSet);
+    }
+
+    /**
+     * 传入包名列表扫描路径将其注册为BeanDefinition
+     * @param packagePathList 包名列表
+     */
+    public void register(List<String> packagePathList) {
+        Set<Class<?>> classSet = new HashSet<>();
+        for (String packagePath : packagePathList) {
+            scanner.doScan(classSet, packagePath.replace(".", "/"));
+        }
+        beanFactory.registerBeanDefinition(classSet);
     }
 
     @Override

@@ -34,7 +34,7 @@ public class ClassPathBeanDefinitionScanner {
         return classSet;
     }
 
-    private void doScan(Set<Class<?>> classSet, String path) {
+    public void doScan(Set<Class<?>> classSet, String path) {
         ClassLoader classLoader = ClassPathBeanDefinitionScanner.class.getClassLoader();
         URL url = classLoader.getResource(path);
         File directory = new File(Objects.requireNonNull(url).getFile());

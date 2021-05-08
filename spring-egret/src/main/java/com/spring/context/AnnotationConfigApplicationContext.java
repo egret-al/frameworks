@@ -6,6 +6,7 @@ import com.spring.config.ConfigurableListableBeanFactory;
 import com.spring.support.AbstractApplicationContext;
 import com.spring.support.DefaultListableBeanFactory;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -14,11 +15,20 @@ import java.util.Set;
  */
 public class AnnotationConfigApplicationContext extends AbstractApplicationContext {
 
-    private final ClassPathBeanDefinitionScanner scanner;
+    public AnnotationConfigApplicationContext(String packagePath) {
+        super();
+        register(packagePath);
+        refresh();
+    }
+
+    public AnnotationConfigApplicationContext(List<String> packagePathList) {
+        super();
+        register(packagePathList);
+        refresh();
+    }
 
     public AnnotationConfigApplicationContext(Class<?> configClass) {
         super();
-        this.scanner = new ClassPathBeanDefinitionScanner();
         register(configClass);
         refresh();
     }
