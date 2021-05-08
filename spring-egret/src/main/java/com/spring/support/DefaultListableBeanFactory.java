@@ -2,10 +2,9 @@ package com.spring.support;
 
 import com.spring.annotation.*;
 import com.spring.config.BeanDefinition;
-import com.spring.factory.BeanNameAware;
-import com.spring.factory.BeanPostProcessor;
-import com.spring.factory.InitializingBean;
-import com.spring.factory.ObjectFactory;
+import com.spring.config.ConfigurableBeanFactory;
+import com.spring.config.ConfigurableListableBeanFactory;
+import com.spring.factory.*;
 import com.spring.resolver.*;
 import com.spring.util.StringUtils;
 
@@ -22,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author rkc
  * @date 2021/3/12 19:25
  */
-public class DefaultListableBeanFactory implements Serializable {
+public class DefaultListableBeanFactory implements ConfigurableListableBeanFactory, BeanDefinitionRegistry, Serializable {
 
     /** 用于存放bean的定义信息 **/
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
@@ -46,6 +45,7 @@ public class DefaultListableBeanFactory implements Serializable {
         annotationPostProcessors.put("Controller", new ControllerAnnotationParser());
     }
 
+    @Override
     public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) {
         if (beanDefinition.getBeanClass() == null) {
             throw new RuntimeException("非法的BeanDefinition");
@@ -55,10 +55,17 @@ public class DefaultListableBeanFactory implements Serializable {
         }
     }
 
+    @Override
+    public void removeBeanDefinition(String beanName) {
+        Objects.requireNonNull(beanName);
+        this.beanDefinitionMap.remove(beanName);
+    }
+
     /**
      * 将字节码描述成一个BeanDefinition
      * @param classSet 字节码集合
      */
+    @Override
     public void registerBeanDefinition(Set<Class<?>> classSet) {
         for (Class<?> clazz : classSet) {
             if (clazz.isAnnotationPresent(Component.class) || clazz.isAnnotationPresent(Service.class)
@@ -105,11 +112,7 @@ public class DefaultListableBeanFactory implements Serializable {
     }
 
     public void doCreateBean() {
-        earlySingletonObjects.clear();
-        singletonObjects.clear();
-        singletonsCurrentlyInCreation.clear();
-        singletonFactories.clear();
-
+        destroySingletons();
         for (String beanName : beanDefinitionMap.keySet()) {
             BeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
             if (beanDefinition.isSingleton()) {
@@ -133,10 +136,7 @@ public class DefaultListableBeanFactory implements Serializable {
     }
 
     public void finishBeanFactoryInitialization() {
-        this.earlySingletonObjects.clear();
-        this.singletonObjects.clear();
-        this.singletonsCurrentlyInCreation.clear();
-        this.singletonFactories.clear();
+        destroySingletons();
         doCreateBean();
     }
 
@@ -154,7 +154,6 @@ public class DefaultListableBeanFactory implements Serializable {
         for (Field field : fields) {
             if (field.isAnnotationPresent(Autowired.class) && field.getAnnotation(Autowired.class).required()) {
                 String fieldName = field.getName();
-                //TODO 修改属性注入逻辑
                 if (field.isAnnotationPresent(Qualifier.class)) {
                     Qualifier qualifier = field.getAnnotation(Qualifier.class);
                     fieldName = qualifier.value();
@@ -285,5 +284,36 @@ public class DefaultListableBeanFactory implements Serializable {
 
     public boolean isSingletonCurrentlyInCreation(String beanName) {
         return this.singletonsCurrentlyInCreation.contains(beanName);
+    }
+
+    @Override
+    public BeanDefinition getBeanDefinition(String beanName) throws NoSuchBeanDefinitionException {
+        BeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
+        if (beanDefinition == null) {
+            throw new NoSuchBeanDefinitionException("不存在该BeanDefinition: " + beanName);
+        }
+        return beanDefinition;
+    }
+
+    @Override
+    public Map<String, BeanDefinition> getBeanDefinitions() throws NoSuchBeanDefinitionException {
+        return this.beanDefinitionMap;
+    }
+
+    @Override
+    public boolean containsBeanDefinition(String beanName) {
+        return this.beanDefinitionMap.containsKey(beanName);
+    }
+
+    @Override
+    public int getBeanDefinitionCount() {
+        return this.beanDefinitionMap.size();
+    }
+
+    public void destroySingletons() {
+        this.earlySingletonObjects.clear();
+        this.singletonObjects.clear();
+        this.singletonsCurrentlyInCreation.clear();
+        this.singletonFactories.clear();
     }
 }
