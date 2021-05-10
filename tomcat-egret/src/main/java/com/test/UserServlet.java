@@ -6,7 +6,6 @@ import com.http.HttpServlet;
 import com.http.HttpServletRequest;
 import com.http.HttpServletResponse;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;

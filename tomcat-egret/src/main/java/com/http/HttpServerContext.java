@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.*;
 
 /**
@@ -31,7 +32,7 @@ public class HttpServerContext extends AbstractServerContext {
     private static ServerSocket serverSocket;
 
     static {
-        String bastPath = HttpServerContext.class.getResource("/").getPath();
+        String bastPath = Objects.requireNonNull(HttpServerContext.class.getResource("/")).getPath();
         File webXmlFile = new File(bastPath + "web.xml");
         if (webXmlFile.exists()) {
             //xml的方式进行解析

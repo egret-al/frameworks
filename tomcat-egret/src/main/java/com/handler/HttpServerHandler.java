@@ -39,7 +39,9 @@ public class HttpServerHandler implements Runnable {
             //根据uri得到一个servletName
             String uri = request.getRequestURI();
             if (uri != null && !uri.isEmpty()) {
-                String servletName = serverContext.getServletMapping().get(uri);
+                //先查看是否存在匹配全部的uri，如果有就使用该servlet
+                String globalServlet = serverContext.getServletMapping().get("/*");
+                String servletName = globalServlet == null ? serverContext.getServletMapping().get(uri) : globalServlet;
                 if (servletName != null && !servletName.isEmpty()) {
                     //根据servletName得到servlet
                     HttpServlet httpServlet = serverContext.getServletMap().get(servletName);
