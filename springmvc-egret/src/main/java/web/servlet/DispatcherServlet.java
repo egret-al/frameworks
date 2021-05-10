@@ -1,22 +1,23 @@
 package web.servlet;
 
+import com.alibaba.fastjson.JSON;
 import com.spring.annotation.Controller;
 import com.spring.config.BeanDefinition;
 import com.spring.context.AnnotationConfigApplicationContext;
 import com.spring.support.AbstractApplicationContext;
 import web.annotation.RequestMapping;
 import web.annotation.RequestMethod;
-import web.annotation.RequestParam;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date：Created in 2021/5/8 18:49
  * @description：
  */
-@SuppressWarnings("serial")
+@WebServlet(value = "/*", loadOnStartup = 1)
 public class DispatcherServlet extends HttpServlet {
 
     /* 用于加载配置文件 */
@@ -37,11 +38,13 @@ public class DispatcherServlet extends HttpServlet {
     private final Map<String, Method> handlerMapping = new ConcurrentHashMap<>(256);
     /* 映射控制器，一个uri对应一个Controller */
     private final Map<String, Object> controllerMapping = new ConcurrentHashMap<>(256);
+    /* 默认配置文件 */
+    private final static String CONFIG_LOCATION = "application.properties";
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        loadConfig(config.getInitParameter("contextConfigLocation"));
+        loadConfig();
         String[] scanPackages = properties.getProperty("spring.scan-package").split(",");
         List<String> packageList = new ArrayList<>(Arrays.asList(scanPackages));
         //将扫描包加载到spring的上下文中
@@ -50,9 +53,11 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        //返回结果统一为json字符串
+        response.setHeader("Content-type", "application/json;charset=UTF-8");
         if (handlerMapping.isEmpty()) {
-            System.err.println("没有任何的处理器");
-            response.getWriter().write("404 NOT FOUND!");
+            response.setHeader("Content-type", "text/html;charset=UTF-8");
+            response.getOutputStream().write("没有对应的处理请求！".getBytes(StandardCharsets.UTF_8));
             return;
         }
         String url = request.getRequestURI();
@@ -60,41 +65,59 @@ public class DispatcherServlet extends HttpServlet {
         url = url.replace(contextPath, "").replaceAll("/+", "/");
         Method handlerMethod = handlerMapping.get(url);
         if (handlerMethod == null) {
-            response.getWriter().write("404 NOT FOUND!");
+            response.setHeader("Content-type", "text/html;charset=UTF-8");
+            response.getOutputStream().write("没有找到该页面！".getBytes(StandardCharsets.UTF_8));
             return;
         }
 
-        Object[] parameterValues = getParameterValues(request, response, handlerMethod);
-        //调用方法
-        Object result = handlerMethod.invoke(this.controllerMapping.get(url), parameterValues);
-        if (!Objects.isNull(result)) {
-            System.out.println("返回结果：" + result);
-            response.getWriter().write(result.toString());
+        String requestType = request.getMethod();
+        HandlerAdapter handlerAdapter = new SimpleHandlerAdapter();
+        Object[] parameterValues = handlerAdapter.handle(request, response, handlerMethod);
+
+        if ("GET".equals(requestType) && checkRequestMethod(handlerMethod, requestType)) {
+            //GET请求调用方法
+            Object result = invokeMethod(this.controllerMapping.get(url), handlerMethod, parameterValues);
+            if (!Objects.isNull(result)) {
+                response.getWriter().write(JSON.toJSONString(result));
+            }
+            return;
+        } else if ("POST".equals(requestType) && checkRequestMethod(handlerMethod, requestType)){
+            //POST调用方法
+            Object result = invokeMethod(this.controllerMapping.get(url), handlerMethod, parameterValues);
+            if (!Objects.isNull(result)) {
+                response.getWriter().write(JSON.toJSONString(result));
+            }
+            return;
         }
+
+        response.setHeader("Content-type", "text/html;charset=UTF-8");
+        response.getOutputStream().write("不支持该类型！".getBytes(StandardCharsets.UTF_8));
+        throw new RuntimeException("不支持的请求类型！" + requestType);
     }
 
-    private Object[] getParameterValues(HttpServletRequest request, HttpServletResponse response, Method method) {
-        Parameter[] parameters = method.getParameters();
-        Object[] parameterValues = new Object[parameters.length];
-        for (int i = 0; i < parameters.length; i++) {
-            Parameter parameter = parameters[i];
-            String typeName = parameter.getType().getSimpleName();
-            if ("HttpServletRequest".equals(typeName)) {
-                parameterValues[i] = request;
-                continue;
-            }
-            if ("HttpServletResponse".equals(typeName)) {
-                parameterValues[i] = response;
-                continue;
-            }
-            if (parameter.isAnnotationPresent(RequestParam.class)) {
-                RequestParam requestParam = parameter.getAnnotation(RequestParam.class);
-                parameterValues[i] = request.getParameter(requestParam.value());
-            } else {
-                throw new RuntimeException("存在参数没有标注RequestParam注解");
+    private Object invokeMethod(Object obj, Method method, Object[] parameters) {
+        try {
+            return method.invoke(obj, parameters);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * 检查该方法是否能够接收对应类型的请求
+     * @param method 当前处理方法
+     * @param requestType 请求类型
+     * @return 是否能够处理
+     */
+    private boolean checkRequestMethod(Method method, String requestType) {
+        RequestMethod[] requestMethods = method.getAnnotation(RequestMapping.class).method();
+        for (RequestMethod rm : requestMethods) {
+            if (rm.name().equals(requestType)) {
+                return true;
             }
         }
-        return parameterValues;
+        return false;
     }
 
     @Override
@@ -148,8 +171,8 @@ public class DispatcherServlet extends HttpServlet {
         }
     }
 
-    private void loadConfig(String location) {
-        InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream(location);
+    private void loadConfig() {
+        InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream(DispatcherServlet.CONFIG_LOCATION);
         try {
             properties.load(inputStream);
         } catch (IOException e) {
