@@ -1,4 +1,4 @@
-package com.test;
+package com.example.test;
 
 import com.annotation.WebServlet;
 import com.http.HttpServlet;

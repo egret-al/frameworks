@@ -1,6 +1,7 @@
 package com.http;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public interface ServerContext {
@@ -13,5 +14,7 @@ public interface ServerContext {
 
     void start(Class<?> clazz, int port) throws IOException;
 
-    void start() throws IOException;
+    void start(String packagePath, int port) throws IOException;
+
+    void start(List<String> packageList, int port) throws IOException;
 }

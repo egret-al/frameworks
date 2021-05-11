@@ -1,7 +1,6 @@
-package com.test;
+package com.example.test;
 
 import com.annotation.WebServlet;
-import com.handler.HttpServerHandler;
 import com.http.HttpServlet;
 import com.http.HttpServletRequest;
 import com.http.HttpServletResponse;
