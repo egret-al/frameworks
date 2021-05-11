@@ -56,7 +56,7 @@ public class StringUtils {
                 return false;
             }
         }
-        return i == uriArr.length - 1;
+        return i == uriArr.length;
     }
 
     public static boolean uriMatching(String originalUri, String uri) {

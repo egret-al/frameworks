@@ -3,6 +3,7 @@ package com.handler;
 import com.http.*;
 import com.parse.WebConfigParser;
 import com.parse.XmlWebConfigParser;
+import com.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,6 +11,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -36,30 +38,15 @@ public class HttpServerHandler implements Runnable {
             //封装HttpServletResponse
             HttpServletResponse response = new HttpServletResponseWrapper(socket.getOutputStream());
 
-            //根据uri得到一个servletName
-            String uri = request.getRequestURI();
-            if (uri != null && !uri.isEmpty()) {
-                //先查看是否存在匹配全部的uri，如果有就使用该servlet
-                String globalServlet = serverContext.getServletMapping().get("/*");
-                String servletName = globalServlet == null ? serverContext.getServletMapping().get(uri) : globalServlet;
-                if (servletName != null && !servletName.isEmpty()) {
-                    //根据servletName得到servlet
-                    HttpServlet httpServlet = serverContext.getServletMap().get(servletName);
-                    if (httpServlet != null) {
-                        //写入成功的响应头
-                        response.getWriter().write(HttpServletResponse.CODE_200);
-                        //能够找到对应的servlet进行处理
-                        httpServlet.service(request, response);
-                    } else {
-                        //映射路径出现错误，交由对应的错误处理器进行执行
-                        response.getWriter().write("HTTP/1.1 200 OK\r\n".getBytes(StandardCharsets.UTF_8));
-                        ResponseErrorHandler urlError = new UrlResponseErrorHandler();
-                        urlError.handle(response);
-                    }
-                }
-            } else {
-                socket.getOutputStream().write("HTTP/1.1 200 OK\r\nContent-Type:text/html;charset=utf-8\r\n\r\n".getBytes(StandardCharsets.UTF_8));
+            HttpServlet servlet = getServlet(request.getRequestURI());
+            if (servlet == null) {
+                response.getWriter().write("HTTP/1.1 404 OK\r\n".getBytes(StandardCharsets.UTF_8));
+                ResponseErrorHandler responseErrorHandler = new UrlResponseErrorHandler();
+                responseErrorHandler.handle(response);
+                return;
             }
+            response.getWriter().write(HttpServletResponse.CODE_200);
+            servlet.service(request, response);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -70,5 +57,22 @@ public class HttpServerHandler implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * 从给定的uri匹配一个servlet
+     * @param uri 精确的uri
+     * @return 能够调用的servlet
+     */
+    private HttpServlet getServlet(String uri) {
+        for (Map.Entry<String, String> entry : serverContext.getServletMapping().entrySet()) {
+            //进行模糊匹配，如果能够匹配就获取servlet的name然后得到servlet
+            if (StringUtils.uriMatch(uri, entry.getKey())) {
+                System.out.println(uri + "  " + entry.getValue());
+                return serverContext.getServletMap().get(entry.getValue());
+            }
+        }
+        //匹配失败
+        return null;
     }
 }

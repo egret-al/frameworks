@@ -1,5 +1,6 @@
 package com.http;
 
+import com.handler.HttpServerHandler;
 import com.parse.AnnotationWebConfigParser;
 import com.parse.WebConfigParser;
 import com.parse.XmlWebConfigParser;
@@ -7,6 +8,7 @@ import com.parse.XmlWebConfigParser;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -18,6 +20,7 @@ import java.util.concurrent.*;
  * @description：
  */
 public abstract class AbstractServerContext implements ServerContext {
+
     protected static final ExecutorService EXECUTOR_SERVICE = new ThreadPoolExecutor(5, 10, 10, TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(10));
     /* <servlet></servlet>标签， <servlet-name>为key，<servlet-class>为value */
@@ -36,6 +39,18 @@ public abstract class AbstractServerContext implements ServerContext {
             //xml的方式进行解析
             WebConfigParser webConfigParser = new XmlWebConfigParser();
             webConfigParser.servletMapping(webXmlFile.getPath(), servletMap, servletMapping);
+        }
+    }
+
+    @Override
+    public void start(int port) throws IOException {
+        serverSocket = new ServerSocket(port);
+        System.out.printf("服务器在%d端口启动...\n", port);
+        while (true) {
+            //进行监听，一旦有请求，就交给线程池处理
+            Socket socket = serverSocket.accept();
+            HttpServerHandler httpServerHandler = new HttpServerHandler(this, socket);
+            EXECUTOR_SERVICE.execute(httpServerHandler);
         }
     }
 

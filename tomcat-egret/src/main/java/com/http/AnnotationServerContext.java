@@ -22,18 +22,6 @@ import java.util.concurrent.*;
 public class AnnotationServerContext extends AbstractServerContext {
 
     @Override
-    public void start(int port) throws IOException {
-        serverSocket = new ServerSocket(port);
-        System.out.printf("服务器在%d端口启动...\n", port);
-        while (true) {
-            //进行监听，一旦有请求，就交给线程池处理
-            Socket socket = serverSocket.accept();
-            HttpServerHandler httpServerHandler = new HttpServerHandler(this, socket);
-            EXECUTOR_SERVICE.execute(httpServerHandler);
-        }
-    }
-
-    @Override
     public void start(Class<?> clazz, int port) throws IOException {
         //以注解的形式进行解析，然后再以xml的形式进行解析，在解析时会进行判断，因此优先级是注解大于xml
         ServletComponentScan servletComponentScan = clazz.getAnnotation(ServletComponentScan.class);
