@@ -6,7 +6,7 @@
 
     <groupId>org.rkc.framework</groupId>
     <artifactId>tomcat-egret</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.3</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -19,11 +19,5 @@
             <artifactId>dom4j</artifactId>
             <version>1.6.1</version>
         </dependency>
-
-<!--        <dependency>-->
-<!--            <groupId>org.rkc.framework</groupId>-->
-<!--            <artifactId>spring-egret</artifactId>-->
-<!--            <version>1.0.2</version>-->
-<!--        </dependency>-->
     </dependencies>
 </project>

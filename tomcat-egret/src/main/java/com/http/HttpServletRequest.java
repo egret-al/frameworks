@@ -1,5 +1,6 @@
 package com.http;
 
+import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -30,6 +31,8 @@ public interface HttpServletRequest {
     String getParameter(String name);
 
     String getParameter(String name, String defaultValue);
+
+    InputStream getInputStream();
 
     byte[] getRequestBody();
 }

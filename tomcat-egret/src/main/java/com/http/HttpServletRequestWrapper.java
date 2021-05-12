@@ -20,9 +20,11 @@ public class HttpServletRequestWrapper implements HttpServletRequest {
     private final Map<String, String> header = new ConcurrentHashMap<>();
     private final Map<String, String> parameters = new ConcurrentHashMap<>();
     private byte[] requestBody;
+    private InputStream inputStream;
 
     public HttpServletRequestWrapper(InputStream inputStream) {
         try {
+            this.inputStream = inputStream;
             //解析输入流
             parseRequestHeader(inputStream);
         } catch (IOException e) {
@@ -121,6 +123,11 @@ public class HttpServletRequestWrapper implements HttpServletRequest {
             return defaultValue;
         }
         return parameter;
+    }
+
+    @Override
+    public InputStream getInputStream() {
+        return this.inputStream;
     }
 
     @Override

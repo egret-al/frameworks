@@ -13,8 +13,18 @@ import java.nio.charset.StandardCharsets;
 public class UserServlet extends HttpServlet {
 
     @Override
+    public void init() {
+        System.out.println("user init");
+    }
+
+    @Override
+    public void destroy() {
+        System.out.println("user destroy");
+    }
+
+    @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.setContentType("application/json;charset=utf-8");
+//
         OutputStream writer = response.getWriter();
         String name = request.getParameter("name");
         String age = request.getParameter("age");

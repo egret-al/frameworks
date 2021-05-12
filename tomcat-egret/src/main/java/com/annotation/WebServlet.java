@@ -19,4 +19,6 @@ public @interface WebServlet {
     String value() default "";
 
     String description() default "";
+
+    int loadOnStartup() default -1;
 }
