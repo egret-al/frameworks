@@ -45,13 +45,19 @@ public abstract class AbstractServerContext implements ServerContext {
     @Override
     public void start(int port) throws IOException {
         serverSocket = new ServerSocket(port);
-        System.out.printf("服务器在%d端口启动...\n", port);
-        while (true) {
-            //进行监听，一旦有请求，就交给线程池处理
-            Socket socket = serverSocket.accept();
-            HttpServerHandler httpServerHandler = new HttpServerHandler(this, socket);
-            EXECUTOR_SERVICE.execute(httpServerHandler);
-        }
+        EXECUTOR_SERVICE.execute(() -> {
+            System.err.printf("The server is listening on port %d...\n", port);
+            while (true) {
+                //进行监听，一旦有请求，就交给线程池处理
+                try {
+                    Socket socket = serverSocket.accept();
+                    HttpServerHandler httpServerHandler = new HttpServerHandler(this, socket);
+                    EXECUTOR_SERVICE.execute(httpServerHandler);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     @Override
