@@ -6,7 +6,7 @@
 
     <groupId>org.rkc.framework</groupId>
     <artifactId>springmvc-tomcat-egret</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.3</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -17,13 +17,20 @@
         <dependency>
             <groupId>org.rkc.framework</groupId>
             <artifactId>tomcat-egret</artifactId>
-            <version>1.0.2</version>
+            <version>1.0.3</version>
         </dependency>
         <!--导入自己的spring-->
         <dependency>
             <groupId>org.rkc.framework</groupId>
             <artifactId>spring-egret</artifactId>
             <version>1.0.3</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.75</version>
         </dependency>
     </dependencies>
 </project>
