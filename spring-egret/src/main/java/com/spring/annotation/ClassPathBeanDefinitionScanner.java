@@ -3,9 +3,13 @@ package com.spring.annotation;
 import com.spring.context.AnnotationConfigApplicationContext;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * @author rkc
@@ -40,6 +44,11 @@ public class ClassPathBeanDefinitionScanner {
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             String classPath = classLoader.getResource("") + path;
             URL url = new URL(classPath);
+            //如果是jar包就进行对jar包扫描
+            if ("jar".equalsIgnoreCase(url.getProtocol())) {
+                doScanJar(classSet, url, path);
+                return;
+            }
             File directory = new File(Objects.requireNonNull(url).getFile());
             for (File file : Objects.requireNonNull(directory.listFiles())) {
                 if (file.isDirectory()) {
@@ -57,6 +66,41 @@ public class ClassPathBeanDefinitionScanner {
                 }
             }
         } catch (MalformedURLException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 对jar包的扫描
+     * @param classSet
+     * @param url
+     * @param basePack
+     */
+    private void doScanJar(Set<Class<?>> classSet, URL url, String basePack) {
+        try {
+            //转换为JarURLConnection
+            JarURLConnection connection = (JarURLConnection) url.openConnection();
+            if (connection != null) {
+                JarFile jarFile = connection.getJarFile();
+                if (jarFile != null) {
+                    //得到该jar下面的类实体
+                    Enumeration<JarEntry> entries = jarFile.entries();
+                    while (entries.hasMoreElements()) {
+                        JarEntry jarEntry = entries.nextElement();
+                        String jarEntryName = jarEntry.getName();
+                        //这里我们需要过滤不是class文件和不在basePack包名下的类
+                        if (jarEntryName.contains(".class") && jarEntryName.startsWith(basePack)) {
+                            String className = jarEntryName.substring(0, jarEntryName.lastIndexOf(".")).replace("/", ".");
+                            Class<?> clazz = Class.forName(className);
+                            if (clazz.isAnnotationPresent(Component.class) || clazz.isAnnotationPresent(Service.class)
+                                    || clazz.isAnnotationPresent(Repository.class) || clazz.isAnnotationPresent(Controller.class)) {
+                                classSet.add(clazz);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
