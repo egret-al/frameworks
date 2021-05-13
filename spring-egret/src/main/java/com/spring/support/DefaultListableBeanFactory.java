@@ -4,6 +4,7 @@ import com.spring.annotation.*;
 import com.spring.config.BeanDefinition;
 import com.spring.config.ConfigurableBeanFactory;
 import com.spring.config.ConfigurableListableBeanFactory;
+import com.spring.context.ApplicationContextAware;
 import com.spring.factory.*;
 import com.spring.resolver.*;
 import com.spring.util.StringUtils;

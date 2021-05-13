@@ -13,6 +13,8 @@ public interface ConfigurableApplicationContext {
 
     <T> T getBean(String name, Class<T> requiredType);
 
+    Object getBean(String name);
+
     ConfigurableListableBeanFactory getBeanFactory() throws IllegalStateException;
 
     void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor);

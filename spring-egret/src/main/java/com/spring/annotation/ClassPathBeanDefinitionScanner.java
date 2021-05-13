@@ -3,6 +3,7 @@ package com.spring.annotation;
 import com.spring.context.AnnotationConfigApplicationContext;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
@@ -35,27 +36,28 @@ public class ClassPathBeanDefinitionScanner {
     }
 
     public void doScan(Set<Class<?>> classSet, String path) {
-        ClassLoader classLoader = ClassPathBeanDefinitionScanner.class.getClassLoader();
-        URL url = classLoader.getResource(path);
-        File directory = new File(Objects.requireNonNull(url).getFile());
-        for (File file : Objects.requireNonNull(directory.listFiles())) {
-            if (file.isDirectory()) {
-                //递归进行读取
-                doScan(classSet, path + "/" + file.getName());
-            } else {
-                String absolutePath = file.getAbsolutePath();
-                absolutePath = absolutePath.substring(absolutePath.indexOf("classes") + ("classes".length() + 1), absolutePath.indexOf(".class"))
-                        .replace("\\", ".");
-                try {
+        try {
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            String classPath = classLoader.getResource("") + path;
+            URL url = new URL(classPath);
+            File directory = new File(Objects.requireNonNull(url).getFile());
+            for (File file : Objects.requireNonNull(directory.listFiles())) {
+                if (file.isDirectory()) {
+                    //递归进行读取
+                    doScan(classSet, path + "/" + file.getName());
+                } else {
+                    String absolutePath = file.getAbsolutePath();
+                    absolutePath = absolutePath.substring(absolutePath.indexOf("classes") + ("classes".length() + 1), absolutePath.indexOf(".class"))
+                            .replace("\\", ".");
                     Class<?> clazz = classLoader.loadClass(absolutePath);
                     if (clazz.isAnnotationPresent(Component.class) || clazz.isAnnotationPresent(Service.class)
                             || clazz.isAnnotationPresent(Repository.class) || clazz.isAnnotationPresent(Controller.class)) {
                         classSet.add(clazz);
                     }
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
                 }
             }
+        } catch (MalformedURLException | ClassNotFoundException e) {
+            e.printStackTrace();
         }
     }
 }

@@ -71,6 +71,11 @@ public abstract class AbstractApplicationContext implements ConfigurableApplicat
     }
 
     @Override
+    public Object getBean(String name) {
+        return this.beanFactory.getBean(name);
+    }
+
+    @Override
     public ConfigurableListableBeanFactory getBeanFactory() throws IllegalStateException {
         return this.beanFactory;
     }
