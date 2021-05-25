@@ -19,7 +19,6 @@ public class ClassPathBeanDefinitionScanner {
 
     /**
      * 根据传入的配置类（被@ComponentScan标注的配置类）
-     *
      * @param configClass 被@ComponentScan标注的类字节码
      * @return 对应路径下所有的字节码
      */
@@ -80,22 +79,20 @@ public class ClassPathBeanDefinitionScanner {
         try {
             //转换为JarURLConnection
             JarURLConnection connection = (JarURLConnection) url.openConnection();
-            if (connection != null) {
+            if (connection != null && connection.getJarFile() != null) {
                 JarFile jarFile = connection.getJarFile();
-                if (jarFile != null) {
-                    //得到该jar下面的类实体
-                    Enumeration<JarEntry> entries = jarFile.entries();
-                    while (entries.hasMoreElements()) {
-                        JarEntry jarEntry = entries.nextElement();
-                        String jarEntryName = jarEntry.getName();
-                        //这里我们需要过滤不是class文件和不在basePack包名下的类
-                        if (jarEntryName.contains(".class") && jarEntryName.startsWith(basePack)) {
-                            String className = jarEntryName.substring(0, jarEntryName.lastIndexOf(".")).replace("/", ".");
-                            Class<?> clazz = Class.forName(className);
-                            if (clazz.isAnnotationPresent(Component.class) || clazz.isAnnotationPresent(Service.class)
-                                    || clazz.isAnnotationPresent(Repository.class) || clazz.isAnnotationPresent(Controller.class)) {
-                                classSet.add(clazz);
-                            }
+                //得到该jar下面的类实体
+                Enumeration<JarEntry> entries = jarFile.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry jarEntry = entries.nextElement();
+                    String jarEntryName = jarEntry.getName();
+                    //这里我们需要过滤不是class文件和不在basePack包名下的类
+                    if (jarEntryName.contains(".class") && jarEntryName.startsWith(basePack)) {
+                        String className = jarEntryName.substring(0, jarEntryName.lastIndexOf(".")).replace("/", ".");
+                        Class<?> clazz = Class.forName(className);
+                        if (clazz.isAnnotationPresent(Component.class) || clazz.isAnnotationPresent(Service.class)
+                                || clazz.isAnnotationPresent(Repository.class) || clazz.isAnnotationPresent(Controller.class)) {
+                            classSet.add(clazz);
                         }
                     }
                 }

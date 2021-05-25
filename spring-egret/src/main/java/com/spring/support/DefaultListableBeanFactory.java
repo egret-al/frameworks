@@ -118,15 +118,21 @@ public class DefaultListableBeanFactory implements ConfigurableListableBeanFacto
             BeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
             if (beanDefinition.isSingleton()) {
                 if (!singletonObjects.containsKey(beanName)) {
-                    Object bean = getSingleton(beanName);
+                    Object instance = getSingleton(beanName);
                     //1、创建bean（调用构造方法），放入二级缓存中
-                    if (bean == null) {
-                        bean = createBeanInstance(beanName, beanDefinition);
+                    if (instance == null) {
+                        instance = createBeanInstance(beanName, beanDefinition);
+                    }
+                    //初始化前回调BeanPostProcessor的postProcessBeforeInitialization方法
+                    for (BeanPostProcessor beanPostProcessor : getBeanPostProcessors()) {
+                        beanPostProcessor.postProcessBeforeInitialization(instance, beanName);
                     }
                     //2、属性注入
                     populateBean(beanName, beanDefinition);
                     //3、接口回调BeanPostProcessor和InitializingBean
-                    initializeBean(beanName, bean);
+                    instance = initializeBean(beanName, instance);
+                    //将BeanPostProcessor的postProcessAfterInitialization方法执行后的结果bean重新修改
+                    earlySingletonObjects.put(beanName, instance);
                 }
             }
             //一个java对象走完整个spring生命周期后，移出二级缓存到一级缓存
@@ -180,12 +186,15 @@ public class DefaultListableBeanFactory implements ConfigurableListableBeanFacto
      * @return spring bean
      */
     public Object getSingleton(String beanName) {
-        Object singletonObject = this.singletonObjects.get(beanName);
         BeanDefinition beanDefinition = this.beanDefinitionMap.get(beanName);
         if (beanDefinition == null) {
+            System.err.println(beanName + "未定义BeanDefinition");
             return null;
         }
+        //首先从一级缓存获取
+        Object singletonObject = this.singletonObjects.get(beanName);
 
+        //如果以及缓存没有且该bean正在创建的过程中，就尝试从二级缓存获取（还未使用到三级缓存，当使用AOP时需要使用到）
         if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
             synchronized (this.singletonObjects) {
                 singletonObject = this.earlySingletonObjects.get(beanName);
@@ -209,11 +218,6 @@ public class DefaultListableBeanFactory implements ConfigurableListableBeanFacto
      */
     @SuppressWarnings("all")
     public Object initializeBean(String beanName, Object bean) {
-        //回调BeanPostProcessor的postProcessBeforeInitialization方法
-        for (BeanPostProcessor beanPostProcessor : getBeanPostProcessors()) {
-            beanPostProcessor.postProcessBeforeInitialization(bean, beanName);
-        }
-
         //如果该bean实现了InitializingBean接口，就进行回调
         if (bean instanceof InitializingBean) {
             ((InitializingBean) bean).afterPropertiesSet();
@@ -221,7 +225,7 @@ public class DefaultListableBeanFactory implements ConfigurableListableBeanFacto
 
         //回调BeanPostProcessor的postProcessAfterInitialization
         for (BeanPostProcessor beanPostProcessor : getBeanPostProcessors()) {
-            beanPostProcessor.postProcessAfterInitialization(bean, beanName);
+            bean = beanPostProcessor.postProcessAfterInitialization(bean, beanName);
         }
         return bean;
     }

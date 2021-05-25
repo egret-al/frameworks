@@ -10,10 +10,20 @@ import com.spring.annotation.Service;
 @Service
 public class BookService {
 
-    @Autowired
-    private UserService userService;
+    private String name = "aa";
 
 //    @Autowired
+    private UserService userService;
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    //    @Autowired
     private BeanPostProcessorImpl beanPostProcessor;
 
     public BeanPostProcessorImpl getBeanPostProcessor() {

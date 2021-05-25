@@ -13,7 +13,7 @@ import java.util.Map;
  * @date：Created in 2021/5/7 22:11
  * @description：
  */
-@Component
+//@Component
 public class BeanFactoryPostProcessorImpl implements BeanFactoryPostProcessor {
 
     @Override
