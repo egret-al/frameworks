@@ -2,7 +2,7 @@
 <project version="4">
   <component name="DBNavigator.Project.DataEditorManager">
     <record-view-column-sorting-type value="BY_INDEX" />
-    <value-preview-text-wrapping value="true" />
+    <value-preview-text-wrapping value="false" />
     <value-preview-pinned value="false" />
   </component>
   <component name="DBNavigator.Project.DataExportManager">
@@ -24,10 +24,59 @@
     <autoscroll-to-editor value="false" />
     <autoscroll-from-editor value="true" />
     <show-object-properties value="true" />
-    <loaded-nodes />
+    <loaded-nodes>
+      <connection connection-id="dc0f40a0-415f-4de9-a56a-2c1871882e1c">
+        <schema name="mybatis_temp" object-types="table, view, procedure, function, constraint, index, column, dataset trigger" />
+      </connection>
+    </loaded-nodes>
+  </component>
+  <component name="DBNavigator.Project.DatabaseConsoleManager">
+    <connection id="dc0f40a0-415f-4de9-a56a-2c1871882e1c">
+      <console name="Connection" type="STANDARD" schema="mybatis_temp" session="Main"><![CDATA[select * from t_user
+where id=2;
+
+desc t_user;
+
+alter table t_user change column realName real_name varchar(20);
+select * from t_score;
+
+show create table t_score;
+
+
+alter table t_score change column userId user_id tinyint;
+drop table t_score;
+create TABLE `t_score` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_Id` int(11) DEFAULT NULL,
+  `spring` tinyint(4) DEFAULT NULL,
+  `mybatis` tinyint(4) DEFAULT NULL,
+  `springmvc` tinyint(4) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk1` (`user_Id`),
+  CONSTRAINT `fk1` FOREIGN KEY (`user_id`) REFERENCES `t_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+select u.id id, username, real_name, sex, mobile, email, note,
+        s.id sid, mybatis, spring, springmvc, user_id
+from t_user u
+left join t_score s on u.id = s.user_id;
+
+set autocommit=1;
+insert into t_score(mybatis, spring, springmvc, user_Id) 
+values(99, 100, 99, 6);
+
+insert into t_score(mybatis, spring, springmvc, user_Id) 
+values(99, 95, 99, 7);
+insert into t_score(mybatis, spring, springmvc, user_Id) 
+values(99, 95, 92, 10);
+commit;]]></console>
+    </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
     <open-files />
+  </component>
+  <component name="DBNavigator.Project.DatabaseSessionManager">
+    <connection id="dc0f40a0-415f-4de9-a56a-2c1871882e1c" />
   </component>
   <component name="DBNavigator.Project.EditorStateManager">
     <last-used-providers />
@@ -54,7 +103,92 @@
     <recently-used-interfaces />
   </component>
   <component name="DBNavigator.Project.Settings">
-    <connections />
+    <connections>
+      <connection id="dc0f40a0-415f-4de9-a56a-2c1871882e1c" active="true">
+        <database>
+          <name value="Connection" />
+          <description value="" />
+          <database-type value="MYSQL" />
+          <config-type value="BASIC" />
+          <database-version value="5.7" />
+          <driver-source value="BUILTIN" />
+          <driver-library value="D:\maven-repository\mysql\mysql-connector-java\8.0.21\mysql-connector-java-8.0.21.jar" />
+          <driver value="com.mysql.cj.jdbc.Driver" />
+          <url-type value="DATABASE" />
+          <host value="localhost" />
+          <port value="3306" />
+          <database value="mybatis_temp" />
+          <type value="USER_PASSWORD" />
+          <user value="root" />
+          <deprecated-pwd value="MjI0Mzc1NjgyNA==" />
+        </database>
+        <properties>
+          <auto-commit value="false" />
+        </properties>
+        <ssh-settings>
+          <active value="false" />
+          <proxy-host value="" />
+          <proxy-port value="22" />
+          <proxy-user value="" />
+          <deprecated-proxy-pwd value="" />
+          <auth-type value="PASSWORD" />
+          <key-file value="" />
+          <key-passphrase value="" />
+        </ssh-settings>
+        <ssl-settings>
+          <active value="false" />
+          <certificate-authority-file value="" />
+          <client-certificate-file value="" />
+          <client-key-file value="" />
+        </ssl-settings>
+        <details>
+          <charset value="UTF-8" />
+          <session-management value="true" />
+          <ddl-file-binding value="true" />
+          <database-logging value="false" />
+          <connect-automatically value="true" />
+          <restore-workspace value="true" />
+          <restore-workspace-deep value="true" />
+          <environment-type value="default" />
+          <connectivity-timeout value="5" />
+          <idle-time-to-disconnect value="30" />
+          <idle-time-to-disconnect-pool value="5" />
+          <credential-expiry-time value="10" />
+          <max-connection-pool-size value="7" />
+          <alternative-statement-delimiter value="" />
+        </details>
+        <object-filters hide-empty-schemas="false" hide-pseudo-columns="false">
+          <object-type-filter use-master-settings="true">
+            <object-type name="SCHEMA" enabled="true" />
+            <object-type name="USER" enabled="true" />
+            <object-type name="ROLE" enabled="true" />
+            <object-type name="PRIVILEGE" enabled="true" />
+            <object-type name="CHARSET" enabled="true" />
+            <object-type name="TABLE" enabled="true" />
+            <object-type name="VIEW" enabled="true" />
+            <object-type name="MATERIALIZED_VIEW" enabled="true" />
+            <object-type name="NESTED_TABLE" enabled="true" />
+            <object-type name="COLUMN" enabled="true" />
+            <object-type name="INDEX" enabled="true" />
+            <object-type name="CONSTRAINT" enabled="true" />
+            <object-type name="DATASET_TRIGGER" enabled="true" />
+            <object-type name="DATABASE_TRIGGER" enabled="true" />
+            <object-type name="SYNONYM" enabled="true" />
+            <object-type name="SEQUENCE" enabled="true" />
+            <object-type name="PROCEDURE" enabled="true" />
+            <object-type name="FUNCTION" enabled="true" />
+            <object-type name="PACKAGE" enabled="true" />
+            <object-type name="TYPE" enabled="true" />
+            <object-type name="TYPE_ATTRIBUTE" enabled="true" />
+            <object-type name="ARGUMENT" enabled="true" />
+            <object-type name="DIMENSION" enabled="true" />
+            <object-type name="CLUSTER" enabled="true" />
+            <object-type name="DBLINK" enabled="true" />
+          </object-type-filter>
+          <object-name-filters />
+        </object-filters>
+      </connection>
+    </connections>
     <browser-settings>
       <general>
         <display-mode value="TABBED" />

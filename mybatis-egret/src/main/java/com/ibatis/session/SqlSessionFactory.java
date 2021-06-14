@@ -6,5 +6,5 @@ package com.ibatis.session;
  */
 public interface SqlSessionFactory {
 
-    SqlSession openSqlSession();
+    SqlSession openSession();
 }

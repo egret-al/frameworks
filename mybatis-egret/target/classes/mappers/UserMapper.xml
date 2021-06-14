@@ -2,9 +2,77 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.test.mapper.UserMapper">
+<mapper namespace="com.demo.mapper.UserMapper">
 
-    <select id="selectAll" resultType="com.test.entity.User">
+    <resultMap id="userMap" type="com.demo.entity.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="real_name" property="realName"/>
+        <result column="sex" property="sex"/>
+        <result column="mobile" property="mobile"/>
+        <result column="email" property="email"/>
+        <result column="note" property="note"/>
+    </resultMap>
+
+    <resultMap id="userScoreMap" type="com.demo.entity.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="real_name" property="realName"/>
+        <result column="sex" property="sex"/>
+        <result column="mobile" property="mobile"/>
+        <result column="email" property="email"/>
+        <result column="note" property="note"/>
+        <association property="score" column="user_id" javaType="com.demo.entity.Score">
+            <id column="sid" property="id"/>
+            <result column="mybatis" property="mybatis"/>
+            <result column="spring" property="spring"/>
+            <result column="springmvc" property="springmvc"/>
+            <result column="user_id" property="userId"/>
+        </association>
+    </resultMap>
+
+    <select id="selectAll" resultMap="userScoreMap">
+        <!--    <select id="selectAll" resultType="com.demo.entity.User">-->
         select * from t_user;
     </select>
+
+<!--        <select id="selectAll2" resultMap="userScoreMap">-->
+    <select id="selectAll2" resultType="com.demo.entity.User">
+        select u.id id, username, real_name, sex, mobile, email, note,
+        s.id sid, mybatis, spring, springmvc, user_id
+        from t_user u
+        left join t_score s on u.id = s.user_id;
+    </select>
+
+    <select id="selectBySex" resultType="com.demo.entity.User">
+        select * from t_user
+        where sex=#{sex};
+    </select>
+
+    <select id="selectUserById" resultType="com.demo.entity.User">
+        select * from t_user
+        where id=#{id};
+    </select>
+
+    <insert id="insertUser" parameterType="com.demo.entity.User" useGeneratedKeys="true">
+        insert into t_user(username, realName, sex, mobile, email, note)
+        values(#{username}, #{realName}, #{sex}, #{mobile}, #{email}, #{note});
+    </insert>
+
+    <delete id="deleteById">
+        delete from t_user
+        where id=#{id};
+    </delete>
+
+    <delete id="deleteUser">
+        delete from t_user
+        where username=#{username} and sex=#{sex};
+    </delete>
+
+    <update id="updateUser" parameterType="com.demo.entity.User">
+        update t_user
+        set username=#{username}, realName=#{realName}, sex=#{sex}, mobile=#{mobile},
+        email=#{email}, note=#{note}
+        where id=#{id};
+    </update>
 </mapper>

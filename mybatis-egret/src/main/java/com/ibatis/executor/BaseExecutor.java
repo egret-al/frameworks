@@ -3,6 +3,7 @@ package com.ibatis.executor;
 import com.ibatis.config.Configuration;
 import com.ibatis.config.MappedStatement;
 
+import java.sql.*;
 import java.util.List;
 
 /**
@@ -15,5 +16,15 @@ public abstract class BaseExecutor implements Executor {
 
     public BaseExecutor(Configuration configuration) {
         this.configuration = configuration;
+    }
+
+    protected void closeStatement(Statement statement) {
+        if (statement != null) {
+            try {
+                statement.close();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+        }
     }
 }

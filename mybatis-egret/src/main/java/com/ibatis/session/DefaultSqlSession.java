@@ -5,12 +5,10 @@ import com.ibatis.config.Configuration;
 import com.ibatis.config.MappedStatement;
 import com.ibatis.executor.Executor;
 import com.ibatis.executor.SimpleExecutor;
-import com.test.mapper.UserMapper;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Collection;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,9 +21,14 @@ public class DefaultSqlSession implements SqlSession {
     private final Configuration configuration;
     private final Executor executor;
 
-    public DefaultSqlSession(Configuration configuration) {
+    public DefaultSqlSession(Configuration configuration, Executor executor) {
         this.configuration = configuration;
-        this.executor = new SimpleExecutor(configuration);
+        this.executor = executor;
+    }
+
+    @Override
+    public Configuration getConfiguration() {
+        return configuration;
     }
 
     @Override
@@ -44,12 +47,38 @@ public class DefaultSqlSession implements SqlSession {
     @Override
     public <E> List<E> selectList(String statement, Object parameter) {
         MappedStatement mappedStatement = configuration.getMappedStatements().get(statement);
-        //通过执行器执行查询sql操作
-        return executor.query(mappedStatement, parameter);
+        try {
+            //通过执行器执行查询sql操作
+            return executor.query(mappedStatement, parameter);
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return new ArrayList<>();
     }
 
     @Override
     public <T> T getMapper(Class<T> mapperInterface) {
-        return (T) Proxy.newProxyInstance(mapperInterface.getClassLoader(), new Class[]{ mapperInterface },  new MapperProxy(this));
+        return (T) Proxy.newProxyInstance(mapperInterface.getClassLoader(), new Class[]{ mapperInterface },  new MapperProxy<T>(this, mapperInterface));
+    }
+
+    @Override
+    public int insert(String statement, Object parameter) {
+        return update(statement, parameter);
+    }
+
+    @Override
+    public int update(String statement, Object parameter) {
+        MappedStatement ms = configuration.getMappedStatements().get(statement);
+        try {
+            return executor.update(ms, parameter);
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return -1;
+    }
+
+    @Override
+    public int delete(String statement, Object parameter) {
+        return update(statement, parameter);
     }
 }
