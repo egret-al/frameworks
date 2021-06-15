@@ -42,7 +42,19 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         ResultMap resultMap = mappedStatement.getResultMap();
         ResultSetTable rst = new ResultSetTable(stmt.getResultSet(), configuration);
         try {
-            autoMappingProperty(resultMap, rst, multipleResults, 0, 0, RETURN_NULL);
+            //遍历每一行
+            for (int i = 0; i < rst.row(); i++) {
+                Object obj = resultMap.getType().getDeclaredConstructor().newInstance();
+                for (int j = 0; j < rst.column(); j++) {
+                    String columnName = rst.getColumnNames().get(j);
+                    //根据列名得到需要注入的属性名
+                    String name = resultMap.getName(columnName);
+                    System.out.println(name);
+                    name = name.substring(name.indexOf(".") + 1);
+                    injection(obj, name, rst.getValue(i, columnName));
+                }
+                multipleResults.add(obj);
+            }
         } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchFieldException e) {
             e.printStackTrace();
         } finally {
@@ -51,62 +63,37 @@ public class DefaultResultSetHandler implements ResultSetHandler {
         return multipleResults;
     }
 
-    /**
-     * 根据ResultMap的映射信息，将ResultSetTable中查询到的数据映射到multipleResults结果中
-     *
-     * @param resultMap       resultMap
-     * @param resultSetTable  查询后的表
-     * @param multipleResults 结果
-     */
-    private Object autoMappingProperty(ResultMap resultMap, ResultSetTable resultSetTable, List<Object> multipleResults, int rowIndex, int columnIndex, int state)
-            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchFieldException {
-        //遍历每行每列
-        for (int i = rowIndex; i < resultSetTable.row(); i++) {
-            //根据ResultMap保存的Class信息创建一个对象，并进行映射赋值
-            Object obj = resultMap.getType().getDeclaredConstructor().newInstance();
-            for (int j = columnIndex; j < resultSetTable.column(); j++) {
-                //得到列名，根据列名和ResultMapping得到存在的属性名
-                String column = resultSetTable.getColumnNames().get(j);
-                String fieldName = resultMap.getProperty(column);
-                if (fieldName == null) {
-                    //如果当前的resultMap没有对应的属性，则检查其association和collection，根据创建resultMap时的规则进行重组resultMap，并根据对应情况进行映射
-                    ResultMap rm = configuration.getResultMap(resultMap.getId() + "_association");
-                    if (rm != null) {
-                        Object fieldObj = autoMappingProperty(rm, resultSetTable, multipleResults, i, j, RETURN_NOT_NULL);
-                        //根据resultMapping的property将当前关联对象进行注入
-                        if (j >= resultMap.getResultMappings().size()) {
-                            break;
-                        }
-                        fieldName = resultMap.getResultMappings().get(j).getProperty();
-                        Field field = resultMap.getType().getDeclaredField(fieldName);
-                        Method setter = resultMap.getType().getMethod(ObjectUtils.setter(fieldName), field.getType());
-                        setter.invoke(obj, fieldObj);
-                    } else {
-                        //尝试从collection中获取
-                        rm = configuration.getResultMap(resultMap.getId() + "_collection");
-//                        Objects.requireNonNull(rm);
-//                        Collection<Object> objects = new ArrayList<>();
-//                        Object itemObj = autoMappingProperty(rm, resultSetTable, multipleResults, i, j, RETURN_NOT_NULL);
-//                        objects.add(itemObj);
-                    }
+    private void injection(Object obj, String name, Object value) throws NoSuchMethodException,
+            InvocationTargetException, IllegalAccessException, InstantiationException, NoSuchFieldException {
+        if (value == null) {
+            return;
+        }
+        //以点形式分开，对其遍历进行获取属性
+        String[] fields = name.split("\\.");
+        Object o1 = obj, o2 = null;
+        for (int i = 0; i < fields.length; i++) {
+            Field field = o1.getClass().getDeclaredField(fields[i]);
+            Method getterMethod = o1.getClass().getMethod(ObjectUtils.getter(field.getName()));
+            if (!ObjectUtils.isBaseType(field.getType())) {
+                Object res = getterMethod.invoke(o1);
+                if (res != null) {
+                    o1 = res;
                     continue;
                 }
-                Field field = resultMap.getType().getDeclaredField(fieldName);
-                //根据映射后的属性名，通过setter方法将其注入
-                Method setter = resultMap.getType().getMethod(ObjectUtils.setter(fieldName), field.getType());
-                //调用setter方法进行赋值
-                Object value = resultSetTable.getValue(i, column);
-                if (value != null) {
-                    setter.invoke(obj, value);
-                }
             }
-            if (state == 0) {
-                multipleResults.add(obj);
+            if (i == fields.length - 1) {
+                Method setterMethod = o1.getClass().getMethod(ObjectUtils.setter(fields[i]), field.getType());
+                setterMethod.invoke(o1, value);
             } else {
-                return obj;
+                o2 = getterMethod.invoke(o1);
+                if (o2 == null) {
+                    o2 = getterMethod.getReturnType().getDeclaredConstructor().newInstance();
+                    Method setterMethod = o1.getClass().getMethod(ObjectUtils.setter(fields[i]), o2.getClass());
+                    setterMethod.invoke(o1, o2);
+                }
+                o1 = o2;
             }
         }
-        return null;
     }
 
     public static class ResultSetTable {

@@ -109,4 +109,61 @@ public class ResultMap {
         }
         return null;
     }
+
+    public String getName(String column) {
+        return getName(type.getSimpleName(), column, this);
+    }
+
+    private String getName(String name, String column, ResultMap resultMap) {
+        for (ResultMapping mapping : resultMap.resultMappings) {
+            if (mapping.getColumn().equalsIgnoreCase(column)) {
+                if (name.length() == 0) {
+                    return mapping.getProperty();
+                }
+                if (mapping.getResultMappingType() == ResultMappingType.RESULT_MAPPING) {
+                    name = name + "." + mapping.getProperty();
+                    return name;
+                }
+            }
+            ResultMap rm = configuration.getResultMap(id + "_association[" + mapping.getProperty() + "]");
+            if (rm == null) {
+                rm = configuration.getResultMap(id + "_collection[" + mapping.getProperty() + "]");
+            }
+            if (rm != null) {
+                return name + "." + mapping.getProperty() + "." + getName("", column, rm);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 根据列名获取当前ResultMap中的ResultMapping，如果当前ResultMap中没有，就从association或者collection中找
+     * @param column 列名
+     * @return ResultMapping
+     */
+    public ResultMapping getResultMapping(String column) {
+        for (ResultMapping resultMapping : resultMappings) {
+            ResultMap rm = configuration.getResultMap(id + "_association[" + resultMapping.getProperty() + "]");
+            if (rm == null) {
+                rm = configuration.getResultMap(id + "_collection[" + resultMapping.getProperty() + "]");
+            }
+            if (rm != null) {
+                return getResultMapping(rm, column, resultMapping);
+            }
+
+            if (resultMapping.getColumn().equalsIgnoreCase(column)) {
+                return resultMapping;
+            }
+        }
+        return null;
+    }
+
+    private ResultMapping getResultMapping(ResultMap resultMap, String column, ResultMapping resultMapping) {
+        for (ResultMapping mapping : resultMap.resultMappings) {
+            if (mapping.getColumn().equalsIgnoreCase(column)) {
+                return resultMapping;
+            }
+        }
+        return null;
+    }
 }

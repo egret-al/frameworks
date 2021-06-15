@@ -4,6 +4,7 @@ import com.ibatis.config.Configuration;
 import com.ibatis.config.MappedStatement;
 import com.ibatis.mapping.ResultMap;
 import com.ibatis.mapping.ResultMapping;
+import com.ibatis.mapping.ResultMappingType;
 import com.ibatis.mapping.SqlCommandType;
 import com.ibatis.util.IgnoreDTDEntityResolver;
 import org.dom4j.Attribute;
@@ -86,18 +87,23 @@ public class XMLMapperBuilder extends BaseBuilder {
             String column = element.attribute("column").getData().toString();
             String property = element.attribute("property").getData().toString();
 
+            ResultMappingType resultMappingType = ResultMappingType.RESULT_MAPPING;
+
             if ("association".equals(element.getName().toString()) || "collection".equals(element.getName().toString())) {
                 String id = resultMapId;
                 if ("association".equals(element.getName().toString())) {
-                    id += "_association";
+                    id += "_association[" + property + "]";
+                    resultMappingType = ResultMappingType.ASSOCIATION;
                 } else if ("collection".equals(element.getName().toString())) {
-                    id += "_collection";
+                    id += "_collection[" + property + "]";
+                    resultMappingType = ResultMappingType.COLLECTION;
                 }
                 //递归进行解析，每一个<association>标签或者<collection>标签都作为一个特殊的resultMap进行存储
                 scanResultMap(configuration, element, id);
             }
 
             ResultMapping.Builder resultMappingBuilder = new ResultMapping.Builder(configuration, property, column);
+            resultMappingBuilder.resultMappingType(resultMappingType);
             Attribute javaType = element.attribute("javaType");
             if (javaType != null) {
                 resultMappingBuilder.javaType(Class.forName(javaType.getData().toString()));

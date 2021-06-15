@@ -47,6 +47,17 @@ public class ObjectUtils {
         return "set" + fieldName.substring(0, 1).toUpperCase(Locale.ENGLISH) + fieldName.substring(1);
     }
 
+    public static boolean isBaseType(Class<?> clazz) throws IllegalAccessException {
+        if (clazz == String.class) {
+            return true;
+        }
+        try {
+            return clazz.isPrimitive() || ((Class<?>) clazz.getField("TYPE").get(null)).isPrimitive();
+        } catch (NoSuchFieldException e) {
+            return false;
+        }
+    }
+
     public static boolean isBaseType(Object object) {
         return object.getClass().isPrimitive()
                 || object instanceof String

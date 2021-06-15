@@ -23,6 +23,8 @@ public class ResultMapping {
     // 字段的jdbc类型，对应元素的jdbcType属性
     private String jdbcType;
 
+    private ResultMappingType resultMappingType = ResultMappingType.RESULT_MAPPING;
+
     public static class Builder {
         private ResultMapping resultMapping = new ResultMapping();
 
@@ -46,6 +48,11 @@ public class ResultMapping {
             resultMapping.property = property;
         }
 
+        public Builder resultMappingType(ResultMappingType resultMappingType) {
+            resultMapping.resultMappingType = resultMappingType;
+            return this;
+        }
+
         public Builder javaType(Class<?> javaType) {
             resultMapping.javaType = javaType;
             return this;
@@ -63,6 +70,10 @@ public class ResultMapping {
 
     public String getProperty() {
         return property;
+    }
+
+    public ResultMappingType getResultMappingType() {
+        return resultMappingType;
     }
 
     public String getColumn() {

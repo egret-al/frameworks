@@ -36,8 +36,8 @@
         select * from t_user;
     </select>
 
-<!--        <select id="selectAll2" resultMap="userScoreMap">-->
-    <select id="selectAll2" resultType="com.demo.entity.User">
+    <select id="selectAll2" resultMap="userScoreMap">
+        <!--    <select id="selectAll2" resultType="com.demo.entity.User">-->
         select u.id id, username, real_name, sex, mobile, email, note,
         s.id sid, mybatis, spring, springmvc, user_id
         from t_user u
